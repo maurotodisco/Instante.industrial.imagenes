@@ -1,140 +1,115 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Editor de Catálogo - Instante Industrial</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-    }
-    #imagenes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .img-thumb {
-      width: 120px;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.2s, border 0.2s;
-      border: 3px solid transparent;
-    }
-    .img-thumb:hover {
-      transform: scale(1.05);
-    }
-    .img-thumb.selected {
-      border-color: #007bff;
-    }
-    #material-form {
-      margin-top: 30px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    input, textarea, button {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Catálogo - Instante Industrial</title>
+<style>
+  body { font-family: sans-serif; background: #f5f5f5; padding: 20px; color: #333; }
+  h1 { text-align: center; margin-bottom: 10px; }
+  #imagenes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
+  .img-thumb { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s, border-color 0.2s; }
+  .img-thumb:hover { transform: scale(1.05); }
+  .img-thumb.selected { border-color: #007bff; }
+  #material-form { margin-top: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 500px; margin-left: auto; margin-right: auto; }
+  input, textarea, button { width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+  button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+  button:hover { background: #0056b3; }
+</style>
 </head>
 <body>
-  <h1>Editor de Catálogo - Instante Industrial</h1>
+<h1>Editor de Catálogo - Instante Industrial</h1>
+<p>Seleccioná las imágenes que querés asociar a un material. Se cargan automáticamente desde tu repositorio público.</p>
 
-  <p>Seleccioná las imágenes que querés asociar a un material. Las imágenes se cargan automáticamente desde tu repositorio público.</p>
+<div id="imagenes">Cargando imágenes...</div>
 
-  <div id="imagenes">Cargando imágenes...</div>
+<form id="material-form">
+  <h2>Nuevo Material</h2>
+  <input type="text" id="nombre" placeholder="Nombre del material" required />
+  <textarea id="descripcion" placeholder="Descripción del material" rows="4"></textarea>
+  <button type="submit">Guardar material</button>
+  <button type="button" id="exportarJSON">📥 Exportar JSON</button>
+</form>
 
-  <form id="material-form">
-    <h2>Nuevo Material</h2>
-    <input type="text" id="nombre" placeholder="Nombre del material" required />
-    <textarea id="descripcion" placeholder="Descripción del material" rows="4"></textarea>
-    <button type="submit">Guardar material</button>
-  </form>
+<script>
+const repo = "maurotodisco/Instante.industrial.imagenes";
+const branch = "main"; 
+const imagenesContainer = document.getElementById("imagenes");
+const selectedImages = new Set();
+let materiales = [];
 
-  <script>
-    const repo = "maurotodisco/Instante.industrial.imagenes";
-    const imagenesContainer = document.getElementById("imagenes");
-    const selectedImages = new Set();
+async function cargarImagenes() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/git/trees/${branch}?recursive=1`);
+    const data = await res.json();
+    const files = data.tree.filter(file => file.path.match(/\.(jpg|jpeg|png|webp)$/i));
+    imagenesContainer.innerHTML = "";
 
-    async function cargarImagenes() {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${repo}/contents/`);
-        const data = await res.json();
+    files.forEach(file => {
+      const imgUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${file.path}`;
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.alt = file.path;
+      img.classList.add("img-thumb");
 
-        imagenesContainer.innerHTML = "";
-
-        data.forEach(item => {
-          if (item.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
-            const img = document.createElement("img");
-            img.src = item.download_url;
-            img.alt = item.name;
-            img.classList.add("img-thumb");
-
-            img.addEventListener("click", () => {
-              if (selectedImages.has(item.download_url)) {
-                selectedImages.delete(item.download_url);
-                img.classList.remove("selected");
-              } else {
-                selectedImages.add(item.download_url);
-                img.classList.add("selected");
-              }
-            });
-
-            imagenesContainer.appendChild(img);
-          }
-        });
-
-        if (!imagenesContainer.children.length) {
-          imagenesContainer.textContent = "No se encontraron imágenes en el repositorio.";
+      img.addEventListener("click", () => {
+        if(selectedImages.has(imgUrl)) {
+          selectedImages.delete(imgUrl);
+          img.classList.remove("selected");
+        } else {
+          selectedImages.add(imgUrl);
+          img.classList.add("selected");
         }
+      });
 
-      } catch (error) {
-        console.error("Error al cargar imágenes:", error);
-        imagenesContainer.textContent = "Error al cargar las imágenes.";
-      }
-    }
-
-    document.getElementById("material-form").addEventListener("submit", e => {
-      e.preventDefault();
-      const nombre = document.getElementById("nombre").value;
-      const descripcion = document.getElementById("descripcion").value;
-      const imagenes = Array.from(selectedImages);
-
-      const material = { nombre, descripcion, imagenes };
-      console.log("Material guardado:", material);
-
-      alert(`Material "${nombre}" guardado con ${imagenes.length} imágenes.`);
-      e.target.reset();
-      selectedImages.clear();
-      document.querySelectorAll(".img-thumb.selected").forEach(img => img.classList.remove("selected"));
+      imagenesContainer.appendChild(img);
     });
 
-    cargarImagenes();
-  </script>
+    if(files.length === 0) imagenesContainer.textContent = "No se encontraron imágenes en el repositorio.";
+  } catch (error) {
+    console.error("Error al cargar imágenes:", error);
+    imagenesContainer.textContent = "Error al cargar las imágenes.";
+  }
+}
+
+document.getElementById("material-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const nombre = document.getElementById("nombre").value.trim();
+  const descripcion = document.getElementById("descripcion").value.trim();
+  const imagenes = Array.from(selectedImages);
+
+  if(!nombre || imagenes.length === 0){
+    alert("Debés poner un nombre y seleccionar al menos una imagen.");
+    return;
+  }
+
+  const material = { nombre, descripcion, imagenes };
+  materiales.push(material);
+
+  console.log("Material guardado:", material);
+  alert(`Material "${nombre}" guardado con ${imagenes.length} imágenes.`);
+
+  e.target.reset();
+  selectedImages.clear();
+  document.querySelectorAll(".img-thumb.selected").forEach(img => img.classList.remove("selected"));
+});
+
+// Exportar JSON
+document.getElementById("exportarJSON").addEventListener("click", () => {
+  if(materiales.length === 0){
+    alert("No hay materiales para exportar");
+    return;
+  }
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(materiales, null, 2));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", "catalogo.json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+});
+
+cargarImagenes();
+</script>
 </body>
 </html>
