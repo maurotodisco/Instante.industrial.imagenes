@@ -5,88 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Catálogo de Materiales - instante.industrial</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f9f9f9;
-      color: #333;
-    }
-    header {
-      text-align: center;
-      background: #ffffff;
-      padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      position: relative;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      color: #222;
-    }
-    header .marca {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-weight: bold;
-      font-size: 1rem;
-      color: #555;
-      font-family: monospace;
-    }
-    .material {
-      background: white;
-      margin: 16px;
-      border-radius: 10px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      padding: 16px;
-    }
+    body { font-family: 'Segoe UI', sans-serif; margin:0; padding:0; background:#f9f9f9; color:#333; }
+    header { text-align:center; background:#fff; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.1); position:relative; }
+    header h1 { margin:0; font-size:1.8rem; }
+    header .marca { position:absolute; top:10px; right:20px; font-weight:bold; font-size:1rem; color:#555; font-family:monospace; }
+    .material { background:white; margin:16px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1); padding:16px; }
     .material h2 { margin-top:0; }
-    .carousel {
-      display: flex;
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      gap: 8px;
-      padding: 8px 0;
-    }
-    .carousel img {
-      height: 160px;
-      border-radius: 8px;
-      object-fit: cover;
-    }
-    .edit-btn {
-      display: block;
-      margin: 16px auto;
-      padding: 10px 20px;
-      border: none;
-      background: #444;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .editor {
-      display: none;
-      background: #f0f0f0;
-      padding: 16px;
-      border-top: 1px solid #ccc;
-    }
-    .editor input, .editor textarea {
-      width: 100%;
-      margin-bottom: 8px;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    .editor label {
-      font-weight: bold;
-      margin-top: 10px;
-      display: block;
-    }
-    footer {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #777;
-      padding: 10px;
-    }
+    .carousel { display:flex; overflow-x:auto; scroll-behavior:smooth; gap:8px; padding:8px 0; }
+    .carousel img { height:160px; border-radius:8px; object-fit:cover; cursor:pointer; }
+    .edit-btn { display:block; margin:16px auto; padding:10px 20px; border:none; background:#444; color:white; border-radius:6px; cursor:pointer; }
+    .editor { display:none; background:#f0f0f0; padding:16px; border-top:1px solid #ccc; }
+    .editor input, .editor textarea, .editor select { width:100%; margin-bottom:8px; padding:8px; border-radius:4px; border:1px solid #ccc; }
+    .editor label { font-weight:bold; margin-top:10px; display:block; }
+    footer { text-align:center; font-size:0.8rem; color:#777; padding:10px; }
   </style>
 </head>
 <body>
@@ -107,38 +38,43 @@
   <select id="materialSelect"></select>
   <label>Editar descripción:</label>
   <textarea id="descripcion" rows="4"></textarea>
-  <label>Agregar imágenes:</label>
-  <input type="file" id="imgInput" multiple accept="image/*">
+  <label>Seleccionar imágenes ya subidas al repositorio (mantener Ctrl/Cmd para múltiples):</label>
+  <select id="imagenSelect" multiple size="5"></select>
   <button onclick="guardarCambios()">Guardar Cambios</button>
 </div>
 
 <footer>© 2025 - instante.industrial - Catálogo interactivo</footer>
 
 <script>
-  // Definimos los materiales iniciales
+  // Definimos los materiales
   let materiales = [
-    { nombre:"Base Metálica", descripcion:"Estructura en caño estructural pintado en epoxi en polvo, curado en horno. Color a elección.", imagenes:[] },
-    { nombre:"Finger de Eucaliptus", descripcion:"Tapa de eucaliptus finger joint, laqueado con poliuretano. Regrueso de 40 mm.", imagenes:[] },
-    { nombre:"Enchapado Paraíso", descripcion:"Tapa enchapada en paraíso, laqueada con poliuretano. Regrueso de 36 mm.", imagenes:[] },
-    { nombre:"Melamina Similmadera", descripcion:"Tapa en melamina similmadera, regrueso de 36 mm.", imagenes:[] }
+    { nombre:"Base Metálica", descripcion:"Estructura en caño estructural pintado en epoxi en polvo, curado en horno. Color a elección.", imagenes:["imagenes/base/base1.jpg","imagenes/base/base2.jpg"] },
+    { nombre:"Finger de Eucaliptus", descripcion:"Tapa de eucaliptus finger joint, laqueado con poliuretano. Regrueso de 40 mm.", imagenes:["imagenes/finger/finger1.jpg","imagenes/finger/finger2.jpg"] },
+    { nombre:"Enchapado Paraíso", descripcion:"Tapa enchapada en paraíso, laqueada con poliuretano. Regrueso de 36 mm.", imagenes:["imagenes/enchapado/enchapado1.jpg"] },
+    { nombre:"Melamina Similmadera", descripcion:"Tapa en melamina similmadera, regrueso de 36 mm.", imagenes:["imagenes/melamina/melamina1.jpg"] }
+  ];
+
+  // Imágenes disponibles en el repositorio
+  const todasImagenes = [
+    "imagenes/base/base1.jpg","imagenes/base/base2.jpg",
+    "imagenes/finger/finger1.jpg","imagenes/finger/finger2.jpg",
+    "imagenes/enchapado/enchapado1.jpg",
+    "imagenes/melamina/melamina1.jpg"
   ];
 
   const catalogo = document.getElementById("catalogo");
   const editor = document.getElementById("editor");
   const materialSelect = document.getElementById("materialSelect");
   const descripcionInput = document.getElementById("descripcion");
-  const imgInput = document.getElementById("imgInput");
+  const imagenSelect = document.getElementById("imagenSelect");
 
-  // Renderiza los materiales en la página
   function renderCatalogo(){
-    catalogo.innerHTML = "";
+    catalogo.innerHTML="";
     materiales.forEach(mat=>{
-      const div = document.createElement("div");
-      div.className = "material";
-      div.innerHTML = `<h2>${mat.nombre}</h2><p>${mat.descripcion}</p>
-        <div class="carousel">
-          ${mat.imagenes.map(src=>`<img src="${src}" alt="${mat.nombre}">`).join("")}
-        </div>`;
+      const div=document.createElement("div");
+      div.className="material";
+      div.innerHTML=`<h2>${mat.nombre}</h2><p>${mat.descripcion}</p>
+        <div class="carousel">${mat.imagenes.map(src=>`<img src="${src}" alt="${mat.nombre}">`).join("")}</div>`;
       catalogo.appendChild(div);
     });
     actualizarSelector();
@@ -147,44 +83,40 @@
   function actualizarSelector(){
     materialSelect.innerHTML="";
     materiales.forEach((mat,i)=>{
-      const opt = document.createElement("option");
-      opt.value=i;
-      opt.textContent=mat.nombre;
+      const opt=document.createElement("option");
+      opt.value=i; opt.textContent=mat.nombre;
       materialSelect.appendChild(opt);
     });
     cargarMaterial(0);
   }
 
   function cargarMaterial(index){
-    descripcionInput.value = materiales[index].descripcion;
+    descripcionInput.value=materiales[index].descripcion;
+    // cargar las imágenes seleccionadas en el editor
+    imagenSelect.innerHTML="";
+    todasImagenes.forEach((img,i)=>{
+      const opt=document.createElement("option");
+      opt.value=i; opt.textContent=img;
+      if(materiales[index].imagenes.includes(img)) opt.selected=true;
+      imagenSelect.appendChild(opt);
+    });
   }
 
   materialSelect.addEventListener("change",e=>{
     cargarMaterial(e.target.value);
   });
 
-  imgInput.addEventListener("change",e=>{
-    const index = materialSelect.value;
-    const files = e.target.files;
-    for(let file of files){
-      const reader = new FileReader();
-      reader.onload = evt=>{
-        materiales[index].imagenes.push(evt.target.result);
-        renderCatalogo();
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
   function guardarCambios(){
-    const index = materialSelect.value;
-    materiales[index].descripcion = descripcionInput.value;
+    const index=materialSelect.value;
+    materiales[index].descripcion=descripcionInput.value;
+    const seleccionadas=[...imagenSelect.selectedOptions].map(opt=>todasImagenes[opt.value]);
+    materiales[index].imagenes=seleccionadas;
     renderCatalogo();
     alert("Cambios guardados");
   }
 
   function toggleEditor(){
-    editor.style.display = editor.style.display==="block" ? "none":"block";
+    editor.style.display=editor.style.display==="block"?"none":"block";
   }
 
   renderCatalogo();
