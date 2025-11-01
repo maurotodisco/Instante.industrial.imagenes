@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Materiales - instante.industrial</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      background: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #222;
+    }
+    header .marca {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-weight: bold;
+      font-size: 1rem;
+      color: #555;
+      font-family: monospace;
+    }
+    .material {
+      background: white;
+      margin: 16px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      padding: 16px;
+    }
+    .material h2 {
+      margin-top: 0;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      gap: 8px;
+      padding: 8px 0;
+    }
+    .carousel img {
+      height: 160px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .edit-btn {
+      display: block;
+      margin: 16px auto;
+      padding: 10px 20px;
+      border: none;
+      background: #444;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .editor {
+      display: none;
+      background: #f0f0f0;
+      padding: 16px;
+      border-top: 1px solid #ccc;
+    }
+    .editor input, .editor textarea {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .editor label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    .add-img {
+      margin-top: 8px;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #777;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Catálogo de Materiales</h1>
+    <span class="marca">instante.industrial</span>
+    <p>Muebles industriales con estructura metálica y tapas personalizables.</p>
+  </header>
+
+  <main id="catalogo"></main>
+
+  <button class="edit-btn" onclick="toggleEditor()">Editar catálogo</button>
+
+  <div class="editor" id="editor">
+    <h3>Editor de Catálogo</h3>
+    <label>Seleccionar material:</label>
+    <select id="materialSelect"></select>
+    <label>Editar descripción:</label>
+    <textarea id="descripcion" rows="4"></textarea>
+    <label>Agregar imágenes:</label>
+    <input type="file" id="imgInput" multiple class="add-img" accept="image/*" />
+    <button onclick="guardarCambios()">Guardar Cambios</button>
+    <button onclick="descargarCatalogo()">Descargar catálogo actualizado</button>
+  </div>
+
+  <footer>© 2025 - instante.industrial - Catálogo interactivo</footer>
+
+  <script>
+    let materiales = [
+      {
+        nombre: "Base Metálica",
+        descripcion:
+          "Estructura en caño estructural pintado en epoxi en polvo, curado en horno. Color a elección.",
+        imagenes: []
+      },
+      {
+        nombre: "Finger de Eucaliptus",
+        descripcion:
+          "Tapa de eucaliptus finger joint, laqueado con poliuretano. Regrueso de 40 mm.",
+        imagenes: []
+      },
+      {
+        nombre: "Enchapado Paraíso",
+        descripcion:
+          "Tapa enchapada en paraíso, laqueada con poliuretano. Regrueso de 36 mm.",
+        imagenes: []
+      },
+      {
+        nombre: "Melamina Similmadera",
+        descripcion:
+          "Tapa en melamina similmadera, regrueso de 36 mm.",
+        imagenes: []
+      }
+    ];
+
+    const catalogo = document.getElementById("catalogo");
+    const editor = document.getElementById("editor");
+    const materialSelect = document.getElementById("materialSelect");
+    const descripcionInput = document.getElementById("descripcion");
+    const imgInput = document.getElementById("imgInput");
+
+    function renderCatalogo() {
+      catalogo.innerHTML = "";
+      materiales.forEach((mat) => {
+        const div = document.createElement("div");
+        div.className = "material";
+        div.innerHTML = `
+          <h2>${mat.nombre}</h2>
+          <p>${mat.descripcion}</p>
+          <div class="carousel">
+            ${mat.imagenes
+              .map((src) => `<img src="${src}" alt="${mat.nombre}" />`)
+              .join("")}
+          </div>
+        `;
+        catalogo.appendChild(div);
+      });
+      actualizarSelector();
+    }
+
+    function actualizarSelector() {
+      materialSelect.innerHTML = "";
+      materiales.forEach((mat, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = mat.nombre;
+        materialSelect.appendChild(opt);
+      });
+      cargarMaterial(0);
+    }
+
+    function cargarMaterial(index) {
+      const mat = materiales[index];
+      descripcionInput.value = mat.descripcion;
+    }
+
+    materialSelect.addEventListener("change", (e) => {
+      cargarMaterial(e.target.value);
+    });
+
+    imgInput.addEventListener("change", async (e) => {
+      const index = materialSelect.value;
+      const files = e.target.files;
+      for (let file of files) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          materiales[index].imagenes.push(evt.target.result);
+          renderCatalogo();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function guardarCambios() {
+      const index = materialSelect.value;
+      materiales[index].descripcion = descripcionInput.value;
+      renderCatalogo();
+      alert("Cambios guardados");
+    }
+
+    function descargarCatalogo() {
+      const blob = new Blob(
+        [
+          "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Catálogo</title></head><body><script>const materiales=" +
+            JSON.stringify(materiales) +
+            "</script><pre>Catálogo actualizado</pre></body></html>"
+        ],
+        { type: "text/html" }
+      );
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "catalogo_actualizado.html";
+      a.click();
+    }
+
+    function toggleEditor() {
+      editor.style.display =
+        editor.style.display === "block" ? "none" : "block";
+    }
+
+    renderCatalogo();
+  </script>
+</body>
+</html>
